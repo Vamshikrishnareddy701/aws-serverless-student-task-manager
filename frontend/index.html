@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Serverless Student Task Manager</title>
+  <meta name="description" content="A portfolio-ready, full-stack student task management application built for AWS Serverless architecture (S3, API Gateway, Lambda, DynamoDB).">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Background Glow FX -->
+  <div class="bg-glow orb-1"></div>
+  <div class="bg-glow orb-2"></div>
+
+  <div class="app-container">
+    
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-box">
+          <i class="fa-brands fa-aws logo-icon"></i>
+        </div>
+        <div>
+          <div class="title-row">
+            <h1 class="app-title">AWS Serverless Student Task Manager</h1>
+            <span class="badge serverless-badge"><i class="fa-solid fa-bolt"></i> Serverless Ready</span>
+          </div>
+          <p class="app-subtitle">Streamline your academic workflow, track assignments, and master cloud-ready task management.</p>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="status-indicator" id="server-status" title="API Status">
+          <span class="status-dot pulsing"></span>
+          <span class="status-text" id="status-text">Connecting...</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Statistics Dashboard Grid -->
+    <section class="stats-section" aria-label="Task Statistics">
+      <div class="stat-card">
+        <div class="stat-icon total-icon">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Tasks</span>
+          <h2 class="stat-value" id="stat-total">0</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon pending-icon">
+          <i class="fa-regular fa-clock"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Pending Tasks</span>
+          <h2 class="stat-value" id="stat-pending">0</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon completed-icon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Completed Tasks</span>
+          <h2 class="stat-value" id="stat-completed">0</h2>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon priority-icon">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">High Priority</span>
+          <h2 class="stat-value" id="stat-high">0</h2>
+        </div>
+      </div>
+      
+      <div class="stat-card progress-stat-card">
+        <div class="stat-content full-width">
+          <div class="progress-header">
+            <span class="stat-label">Completion Progress</span>
+            <span class="progress-pct" id="stat-pct">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Layout (Form + Task Display) -->
+    <main class="main-layout">
+      
+      <!-- Left Column: Add Task Form -->
+      <aside class="form-aside">
+        <div class="glass-card form-card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-plus-circle text-accent"></i> Create New Task</h3>
+            <p class="card-desc">Add coursework, assignments, or study goals.</p>
+          </div>
+
+          <form id="task-form" class="task-form" novalidate>
+            <div class="form-group">
+              <label for="task-title">Task Title <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-heading input-icon"></i>
+                <input type="text" id="task-title" class="form-input" placeholder="e.g., Complete AWS Lambda Assignment" required autocomplete="off">
+              </div>
+              <span class="error-msg" id="title-error">Task title is required</span>
+            </div>
+
+            <div class="form-group">
+              <label for="task-desc">Description</label>
+              <div class="input-wrapper">
+                <textarea id="task-desc" class="form-input form-textarea" rows="3" placeholder="Enter task details, resources, or notes..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half-width">
+                <label for="task-priority">Priority</label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-layer-group input-icon"></i>
+                  <select id="task-priority" class="form-input form-select">
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group half-width">
+                <label for="task-category">Category</label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-tag input-icon"></i>
+                  <select id="task-category" class="form-input form-select">
+                    <option value="Assignment" selected>Assignment</option>
+                    <option value="Study">Study</option>
+                    <option value="Exam">Exam</option>
+                    <option value="Project">Project</option>
+                    <option value="Personal">Personal</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="task-duedate">Due Date</label>
+              <div class="input-wrapper">
+                <i class="fa-regular fa-calendar-days input-icon"></i>
+                <input type="date" id="task-duedate" class="form-input">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="add-btn">
+                <i class="fa-solid fa-paper-plane"></i> Add Task
+              </button>
+              <button type="button" class="btn btn-secondary" id="reset-form-btn">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- AWS Architecture Callout Card -->
+        <div class="glass-card aws-info-card">
+          <h4><i class="fa-brands fa-aws aws-brand"></i> AWS Deployment Info</h4>
+          <p>This app follows serverless best practices. In production, requests hit <strong>Amazon API Gateway</strong>, triggering <strong>AWS Lambda (Python)</strong> to persist data in <strong>Amazon DynamoDB</strong>.</p>
+        </div>
+      </aside>
+
+      <!-- Right Column: Controls & Tasks List -->
+      <section class="tasks-section">
+        <div class="glass-card controls-card">
+          <div class="search-bar-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="search-input" class="search-input" placeholder="Search tasks by title or description..." autocomplete="off">
+            <button id="clear-search-btn" class="clear-btn hidden" aria-label="Clear Search">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="filters-row">
+            <!-- Status Tabs -->
+            <div class="filter-tabs" role="tablist">
+              <button class="tab-btn active" data-filter="all" id="tab-all">All</button>
+              <button class="tab-btn" data-filter="pending" id="tab-pending">Pending</button>
+              <button class="tab-btn" data-filter="completed" id="tab-completed">Completed</button>
+            </div>
+
+            <!-- Priority & Sort Dropdowns -->
+            <div class="dropdown-filters">
+              <select id="priority-filter" class="control-select" aria-label="Filter by Priority">
+                <option value="all">All Priorities</option>
+                <option value="High">High Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="Low">Low Priority</option>
+              </select>
+
+              <select id="sort-select" class="control-select" aria-label="Sort Tasks">
+                <option value="default">Default Sort</option>
+                <option value="duedate">Due Date (Earliest)</option>
+                <option value="priority">Priority (High to Low)</option>
+                <option value="title">Alphabetical (A-Z)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task List Container -->
+        <div class="tasks-container" id="tasks-container">
+          <!-- Dynamic Task Cards Rendered Here -->
+          <div class="loading-spinner-box" id="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading tasks from API...</p>
+          </div>
+        </div>
+
+        <!-- Empty State Container -->
+        <div class="empty-state hidden" id="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+          <h3 id="empty-title">No tasks found</h3>
+          <p id="empty-desc">You don't have any tasks matching your filters. Try adding a new task or clearing search.</p>
+          <button class="btn btn-outline" id="seed-btn">
+            <i class="fa-solid fa-database"></i> Reset Sample Data
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>AWS Serverless Student Task Manager &copy; 2026 | Built with Vanilla HTML/CSS/JS, Python Flask & AWS Lambda/DynamoDB Readiness</p>
+    </footer>
+
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div class="modal-overlay hidden" id="edit-modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square text-accent"></i> Edit Task</h3>
+        <button class="close-modal-btn" id="close-edit-modal">&times;</button>
+      </div>
+      <form id="edit-task-form" class="modal-body">
+        <input type="hidden" id="edit-task-id">
+
+        <div class="form-group">
+          <label for="edit-task-title">Task Title <span class="required">*</span></label>
+          <input type="text" id="edit-task-title" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-task-desc">Description</label>
+          <textarea id="edit-task-desc" class="form-input form-textarea" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half-width">
+            <label for="edit-task-priority">Priority</label>
+            <select id="edit-task-priority" class="form-input form-select">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+
+          <div class="form-group half-width">
+            <label for="edit-task-category">Category</label>
+            <select id="edit-task-category" class="form-input form-select">
+              <option value="Assignment">Assignment</option>
+              <option value="Study">Study</option>
+              <option value="Exam">Exam</option>
+              <option value="Project">Project</option>
+              <option value="Personal">Personal</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half-width">
+            <label for="edit-task-duedate">Due Date</label>
+            <input type="date" id="edit-task-duedate" class="form-input">
+          </div>
+
+          <div class="form-group half-width">
+            <label for="edit-task-completed">Status</label>
+            <select id="edit-task-completed" class="form-input form-select">
+              <option value="false">Pending</option>
+              <option value="true">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay hidden" id="delete-modal-overlay">
+    <div class="modal-card glass-card delete-modal">
+      <div class="modal-header">
+        <h3 class="danger-title"><i class="fa-solid fa-triangle-exclamation"></i> Confirm Deletion</h3>
+        <button class="close-modal-btn" id="close-delete-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="delete-task-title-text">this task</strong>?</p>
+        <p class="subtext">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-delete-btn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-btn"><i class="fa-solid fa-trash-can"></i> Delete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Main JavaScript File -->
+  <script src="script.js"></script>
+</body>
+</html>
